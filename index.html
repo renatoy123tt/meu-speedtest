@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpeedTest Pro - Teste sua Velocidade</title>
+    <style>
+        /* --- ESTILOS GERAIS (CSS) --- */
+        :root {
+            --primary: #007bff;
+            --secondary: #00d2ff;
+            --dark: #2c3e50;
+            --light: #f4f7f6;
+            --text-color: #333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+        body {
+            background-color: var(--light);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        header {
+            background: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo { font-size: 1.5rem; font-weight: bold; color: var(--primary); }
+        .logo span { color: var(--dark); }
+
+        /* Main Container */
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        /* Medidor Circular (Gauge) */
+        .gauge-wrapper {
+            position: relative;
+            width: 250px;
+            height: 250px;
+            margin: 0 auto 30px;
+        }
+
+        svg {
+            transform: rotate(-90deg);
+            width: 100%;
+            height: 100%;
+        }
+
+        circle {
+            fill: none;
+            stroke-width: 20;
+            stroke-linecap: round;
+        }
+
+        .circle-bg { stroke: #e6e6e6; }
+        
+        .circle-progress {
+            stroke: url(#gradient);
+            stroke-dasharray: 630; /* Circunferência aproximada */
+            stroke-dashoffset: 630; /* Começa vazio */
+            transition: stroke-dashoffset 0.1s linear;
+        }
+
+        .gauge-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .gauge-value { font-size: 3.5rem; font-weight: 800; color: var(--dark); line-height: 1; }
+        .gauge-label { font-size: 1rem; color: #777; margin-top: 5px; }
+        .gauge-unit { font-size: 1.2rem; font-weight: bold; color: var(--primary); }
+
+        /* Grid de Resultados */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-item h3 { font-size: 0.9rem; color: #888; margin-bottom: 5px; }
+        .stat-item .value { font-size: 1.5rem; font-weight: bold; color: var(--dark); }
+        .stat-item .unit { font-size: 0.8rem; color: #aaa; }
+
+        /* Botão */
+        .btn-start {
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 15px 50px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+
+        .btn-start:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0, 123, 255, 0.4);
+        }
+
+        .btn-start:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Ofertas (Baseado no seu print) */
+        .offers {
+            margin-top: 30px;
+            width: 100%;
+            max-width: 500px;
+        }
+        .offer-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #eee;
+        }
+        .price { font-weight: bold; color: var(--primary); }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">Fast<span>Check</span></div>
+        <nav>
+            <a href="#" style="text-decoration: none; color: var(--dark);">Histórico</a>
+        </nav>
+    </header>
+
+    <main>
+        <div class="card">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <h3>PING</h3>
+                    <div><span id="ping-val" class="value">--</span> <span class="unit">ms</span></div>
+                </div>
+                <div class="stat-item">
+                    <h3>DOWNLOAD</h3>
+                    <div><span id="download-val" class="value">--</span> <span class="unit">Mega</span></div>
+                </div>
+                <div class="stat-item">
+                    <h3>UPLOAD</h3>
+                    <div><span id="upload-val" class="value">--</span> <span class="unit">Mega</span></div>
+                </div>
+            </div>
+
+            <div class="gauge-wrapper">
+                <svg>
+                    <defs>
+                        <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#007bff" />
+                            <stop offset="100%" stop-color="#00d2ff" />
+                        </linearGradient>
+                    </defs>
+                    <circle cx="125" cy="125" r="100" class="circle-bg" />
+                    <circle cx="125" cy="125" r="100" class="circle-progress" id="progress-ring" />
+                </svg>
+                <div class="gauge-text">
+                    <span class="gauge-label" id="status-label">Pronto</span>
+                    <span class="gauge-value" id="main-display">0.0</span>
+                    <span class="gauge-unit">Mbps</span>
+                </div>
+            </div>
+
+            <button class="btn-start" id="start-btn" onclick="iniciarTeste()">Iniciar Teste</button>
+        </div>
+
+        <div class="offers">
+            <div class="offer-card">
+                <div><strong>Vivo Fibra</strong><br><small>600 Mega</small></div>
+                <div class="price">R$ 100,00<small>/mês</small></div>
+            </div>
+            <div class="offer-card">
+                <div><strong>Claro Net</strong><br><small>500 Mega</small></div>
+                <div class="price">R$ 99,90<small>/mês</small></div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // --- LÓGICA DE SIMULAÇÃO (JAVASCRIPT) ---
+        // Nota: Um teste real requer conexão com servidores backend específicos.
+        // Este script simula a experiência visual para demonstração.
+
+        const startBtn = document.getElementById('start-btn');
+        const progressRing = document.getElementById('progress-ring');
+        const mainDisplay = document.getElementById('main-display');
+        const statusLabel = document.getElementById('status-label');
+        
+        const pingEl = document.getElementById('ping-val');
+        const downloadEl = document.getElementById('download-val');
+        const uploadEl = document.getElementById('upload-val');
+
+        const circumference = 630; // 2 * PI * r (aprox)
+
+        function setProgress(percent) {
+            const offset = circumference - (percent / 100) * circumference;
+            progressRing.style.strokeDashoffset = offset;
+        }
+
+        function numeroAleatorio(min, max) {
+            return (Math.random() * (max - min) + min).toFixed(1);
+        }
+
+        function iniciarTeste() {
+            startBtn.disabled = true;
+            startBtn.innerText = "Testando...";
+            
+            // 1. Simular PING
+            statusLabel.innerText = "Ping...";
+            let pingCount = 0;
+            const pingInterval = setInterval(() => {
+                const ping = Math.floor(Math.random() * (80 - 10) + 10);
+                mainDisplay.innerText = ping;
+                pingEl.innerText = ping;
+                pingCount++;
+                if(pingCount > 10) {
+                    clearInterval(pingInterval);
+                    pingEl.innerText = Math.floor(Math.random() * (20 - 10) + 10); // Valor final Ping
+                    simularDownload();
+                }
+            }, 100);
+        }
+
+        function simularDownload() {
+            statusLabel.innerText = "Download";
+            setProgress(0);
+            let speed = 0.0;
+            let targetSpeed = numeroAleatorio(50, 300); // Simula entre 50 e 300 megas
+            let current = 0;
+
+            const downInterval = setInterval(() => {
+                current += Math.random() * 5; 
+                if (current >= targetSpeed) current = targetSpeed;
+                
+                mainDisplay.innerText = current.toFixed(1);
+                
+                // Anima o anel (vai até 100% visualmente)
+                let visualPercent = (current / targetSpeed) * 100;
+                setProgress(visualPercent);
+
+                if (current >= targetSpeed) {
+                    clearInterval(downInterval);
+                    downloadEl.innerText = targetSpeed;
+                    setTimeout(simularUpload, 500);
+                }
+            }, 50);
+        }
+
+        function simularUpload() {
+            statusLabel.innerText = "Upload";
+            setProgress(0);
+            let speed = 0.0;
+            let targetSpeed = numeroAleatorio(20, 150); // Simula upload menor
+            let current = 0;
+
+            const upInterval = setInterval(() => {
+                current += Math.random() * 3;
+                if (current >= targetSpeed) current = targetSpeed;
+
+                mainDisplay.innerText = current.toFixed(1);
+                
+                let visualPercent = (current / targetSpeed) * 100;
+                setProgress(visualPercent);
+
+                if (current >= targetSpeed) {
+                    clearInterval(upInterval);
+                    uploadEl.innerText = targetSpeed;
+                    finalizarTeste();
+                }
+            }, 50);
+        }
+
+        function finalizarTeste() {
+            startBtn.disabled = false;
+            startBtn.innerText = "Refazer Teste";
+            statusLabel.innerText = "Concluído";
+            setProgress(0);
+            mainDisplay.innerText = "Fim";
+        }
+    </script>
+</body>
+</html>
